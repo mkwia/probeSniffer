@@ -41,7 +41,7 @@
 ```
 $ sudo apt-get update && sudo apt-get install python3 python3-pip -y
 
-$ git clone https://github.com/xdavidhu/probeSniffer
+$ git clone https://github.com/mkwia/probeSniffer
 
 $ cd probeSniffer/
 
