@@ -186,6 +186,7 @@ def PrintPacket(pkt):
     statusWidget(len(devices))
     debug("printpacket started")
     ssid = pkt.getlayer(Dot11ProbeReq).info.decode("utf-8")
+    rssi = str(pkt.dbm_antsignal)
     if ssid == "":
         nossid = True
         debug("no ssid in request... skipping")
@@ -225,29 +226,29 @@ def PrintPacket(pkt):
                 if not checkSQLDuplicate(ssid, mac_address):
                     debug("not duplicate")
                     debug("saving to sql")
-                    saveToMYSQL(mac_address, vendor, ssid)
+                    saveToMYSQL(mac_address, vendor, ssid, rssi)
                     debug("saved to sql")
                     if nickname == False:
-                        print(print_source + " (" + vendor + ") ==> '" + ssid + "'")
+                        print(print_source + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
                     else:
-                        print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "'")
+                        print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
                 else:
                     if saveDuplicates:
                         debug("saveDuplicates on")
                         debug("saving to sql")
-                        saveToMYSQL(mac_address, vendor, ssid)
+                        saveToMYSQL(mac_address, vendor, ssid, rssi)
                         debug("saved to sql")
                     if showDuplicates:
                         debug("duplicate")
                         if nickname == False:
-                            print("[D] " + print_source + " (" + vendor + ") ==> '" + ssid + "'")
+                            print("[D] " + print_source + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
                         else:
-                            print("[D] " + print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "'")
+                            print("[D] " + print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
             else:
                 if nickname == False:
-                    print(print_source + " (" + vendor + ") ==> '" + ssid + "'")
+                    print(print_source + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
                 else:
-                    print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "'")
+                    print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> '" + ssid + "' " + rssi + "dBm")
         except KeyboardInterrupt:
             stop()
             exit()
@@ -256,9 +257,9 @@ def PrintPacket(pkt):
     else:
         if showBroadcasts:
             if nickname == False:
-                print(print_source + " (" + vendor + ") ==> BROADCAST")
+                print(print_source + " (" + vendor + ") ==> BROADCAST " + rssi + "dBm")
             else:
-                print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> BROADCAST")
+                print(print_source + " [" + str(nickname) + "]" + " (" + vendor + ") ==> BROADCAST " + rssi + "dBm")
     statusWidget(len(devices))
 
 def SQLConncetor():
@@ -297,13 +298,13 @@ def checkSQLDuplicate(ssid, mac_add):
         debug(traceback.format_exc())
         pass
 
-def saveToMYSQL(mac_add, vendor, ssid):
+def saveToMYSQL(mac_add, vendor, ssid, rssi):
     try:
         debug("saveToMYSQL called")
         cursor = SQLConncetor()
         ts = time.time()
         st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-        cursor.execute("INSERT INTO probeSniffer VALUES (?, ?, ?, ?)", (mac_add, vendor, ssid, st))
+        cursor.execute("INSERT INTO probeSniffer VALUES (?, ?, ?, ?, ?)", (mac_add, vendor, ssid, st, rssi))
         db.commit()
         db.close()
     except KeyboardInterrupt:
@@ -353,7 +354,7 @@ def main():
                 print("\n[I] Nickname database flushed.\n")
             except:
                 print("\n[!] Cant flush nickname database, since its not created yet\n")
-        setupCursor.execute("CREATE TABLE IF NOT EXISTS probeSniffer (mac_address VARCHAR(50),vendor VARCHAR(50),ssid VARCHAR(50),date VARCHAR(50))")
+        setupCursor.execute("CREATE TABLE IF NOT EXISTS probeSniffer (mac_address VARCHAR(50),vendor VARCHAR(50),ssid VARCHAR(50),date VARCHAR(50),rssi VARCHAR(50))")
         setupCursor.execute("CREATE TABLE IF NOT EXISTS probeSnifferNicknames (mac VARCHAR(50),nickname VARCHAR(50))")
         setupDB.commit()
         setupDB.close()
